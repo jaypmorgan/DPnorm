@@ -1,5 +1,6 @@
 function find_words(conv::String)
     conv = split(conv, r"[\n\s]")  # split by new line or space
+    conv = filter(x -> x != "", conv)
 end
 
 function expected_frequency(words)
@@ -18,7 +19,7 @@ end
         DP[word] = 0
     end
 
-    @showprogress 5 "Computing DPnorms..." for word in all_words
+    @showprogress 1 "Computing DPnorms..." for word in all_words
         diffs = zeros(Float64,length(of)); for (i, (part_ef, part_of)) in enumerate(zip(ef, of))
             this_ef = get(part_ef, word, 0.)
             this_of = get(part_of, word, 0.)

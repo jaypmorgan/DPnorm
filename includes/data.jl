@@ -1,30 +1,45 @@
+"""
+    read_dir(directory::String)
+
+Read a directory of files, where each file is its own
+corpus part.
+"""
+function read_dir(directory::String)
+    readdir(directory)
+end
+
+"""
+    read_corpus_part(fn::String)
+
+Read a corpus part from a text file and return the
+contents as a string.
+"""
 function read_corpus_part(fn::String)
+    if endswith(fn, ".txt")
+        content = read_text_file(fn)
+    elseif endswith(fn, ".xml")
+        content = read_xml_file(fn)
+    else
+        @warn "Skipping $fn as there is no known method of reading it"
+        content = ""
+    end
+    return content
+end
+
+function read_text_file(fn::String)
     open(fn, "r") do f
         content = read(f, String) |> strip |> String
     end
 end
 
-function read_xml_dir(fn::String; corpus_part_tag="conversation")
-    parts_in_all_files = []
-    for file in readdir(fn)
-        parts_in_file = read_xml_file(joinpath(fn, file), corpus_part_tag)
-        parts_in_all_files = union(parts_in_all_files, parts_in_file)
-    end
-    return parts_in_all_files
-end
+"""
+    read_xml_file(fn::String, corpus_part_tag)
 
-function read_xml_file(fn::String, corpus_part_tag)
+Read a corpus part from an XML file where the "contents" or wording
+to be read exists in a corpus_part_tag tag within the XML file.
+"""
+function read_xml_file(fn::String)
     xdoc = parse_file(fn)
-    xroot = root(xdoc)
-
-    parts = []
-
-    for part in get_elements_by_tagname(xroot, corpus_part_tag)
-        messages_in_part = []
-        for message in get_elements_by_tagname(part, "message")
-            push!(messages_in_part, find_element(message, "text") |> content)
-        end
-        push!(parts, join(messages_in_part, " "))
-    end
-    return parts
+    c = root(xdoc) |> content |> strip |> String
+    c = replace(c, "\n" => "")
 end
