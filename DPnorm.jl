@@ -20,38 +20,41 @@ include("includes/data.jl");
 const DATA_DIR = "data"
 const CONV_DIR = joinpath(DATA_DIR, "test")
 corpus_parts = read_dir(CONV_DIR)
-N = length(corpus_parts)
 
-# Compute the expected frequencies
-ef = []; counts_per_part = []; total_counts = Dict{String,Int}();
-@showprogress 1 "Computing Expected Frequencies..." for corpus_part in corpus_parts
-    words = read_corpus_part(joinpath(CONV_DIR, corpus_part)) |> find_words
-    freqs, counts = expected_frequency(words)
 
-    push!(ef, freqs)
-    push!(counts_per_part, counts)
-    for (word, count) in counts
-        total_counts[word] = get(total_counts, word, 0) + count
+
+
+# http://www.stgries.info/research/ToApp_STG_Dispersion_PHCL.pdf
+n = length(corpus_parts)    # the length of the corpus in parts
+s = [];
+
+# get all the words per corpus
+words_in_parts = [
+    read_corpus_part(joinpath(CONV_DIR, corpus_part)) |> find_words
+    for corpus_part in corpus_parts
+]
+
+l = sum(length, words_in_parts)                 # the length of the corpus in words
+s = [length(part)/l for part in words_in_parts] # the percentages of the n corpus part sizes
+v = [countmap(part) for part in words_in_parts] # the frequences of a in each part
+f = countmap(split(join([join(w, " ") for w in words_in_parts], " "), " "))  # the overall frequencies
+
+norms = Dict{String,Float64}()
+for (word, total_freq) in f
+    dp = 0
+    for i in 1:n
+        of = get(v[i], word, 0)
+        dp += abs((of / total_freq) - s[i])
     end
+
+    dp *= 0.5
+
+    norms[word] = dp / (1 - minimum(s))
 end
 
-# Compute the observed frequencies
-of = [];
-@showprogress 1 "Computing Observed Frequences..." for count in counts_per_part
-    of_per_part = Dict{String,Float64}()
-    for (w, v) in count
-        of_per_part[w] = v / total_counts[w]
-    end
-    push!(of, of_per_part)
-end
-
-# Compute the DPnorm scores
-scores = compute_dpnorm(ef, of, total_counts)
-scores = sort(collect(scores), by=x->x[2])
-
-# Write the output scores
+norms = sort(collect(norms), by=x->x[2])
 @info "Writing DPNorm scores to"
-scores = DataFrame(token = [x[1] for x in scores],
-                   frequency = [total_counts[w[1]] for w in scores],
-                   dpnorm = [x[2] for x in scores]);
-CSV.write("output.csv", scores)
+norms = DataFrame(token = [x[1] for x in norms],
+                   frequency = [f[w[1]] for w in norms],
+                   dpnorm = [x[2] for x in norms]);
+CSV.write("output.csv", norms)
