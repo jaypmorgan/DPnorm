@@ -17,7 +17,6 @@ using ArgParse
 include("includes/stats.jl");
 include("includes/data.jl");
 
-
 # command line arguments
 s = ArgParseSettings()
 @add_arg_table s begin
@@ -38,9 +37,9 @@ n = length(corpus_parts)    # the length of the corpus in parts
 s = [];
 
 @info "Reading Corpus Parts from $CONV_DIR"
-# get all the words per corpus
 words_in_parts = [
-    read_corpus_part(joinpath(CONV_DIR, corpus_part)) |> find_words
+    # get all the words per corpus
+    lowercase.(read_corpus_part(joinpath(CONV_DIR, corpus_part)) |> find_words)
     for corpus_part in corpus_parts
 ]
 
@@ -50,7 +49,7 @@ v = [countmap(part) for part in words_in_parts] # the frequences of a in each pa
 f = countmap(split(join([join(w, " ") for w in words_in_parts], " "), " "))  # the overall frequencies
 
 norms = Dict{String,Float64}()
-@showprogress 1 "Computing DPNorm Scores" for (word, total_freq) in f
+@showprogress 0.5 "Computing DPNorm Scores" for (word, total_freq) in f
     dp = 0
     for i in 1:n
         of = get(v[i], word, 0)
