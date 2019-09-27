@@ -24,24 +24,32 @@ s = ArgParseSettings()
         help = "input directory of corpus parts"
     "--output", "-o"
         help = "filename of the output CSV filename"
+    "--punctuation", "-p"
+        help = "strip function from text before computing scores. !!![DEFAULT: .,:;??!。，；：？！‚¿¡…'\"‘’`“”_„()<=>[]{}‹›《》-–—一*]"
 end
 const ARGS = parse_args(s)
 
 # setup the datapaths and count the number of corpus part
 const CONV_DIR = ARGS["input"]
 const OUTPUT_FN = ARGS["output"]
+const punctuation = ARGS["punctuation"] == nothing ? split(".,:;??!。，；：？！‚¿¡…'\"‘’`“”_„()<=>[]{}��‹›《》-–—一*", "") : split(ARGS["punctuation"], "")
+
+# english_dictionary = read_dictionary("includes/english-contractions-list.txt")
+english_dictionary = ["don't", "i'm", "wouldn't", "you'll", "i'd", "she'd", "can't"]
 corpus_parts = read_dir(CONV_DIR)
+
 
 # http://www.stgries.info/research/ToApp_STG_Dispersion_PHCL.pdf
 n = length(corpus_parts)    # the length of the corpus in parts
 s = [];
 
 @info "Reading Corpus Parts from $CONV_DIR"
-words_in_parts = [
-    # get all the words per corpus
-    lowercase.(read_corpus_part(joinpath(CONV_DIR, corpus_part)) |> find_words)
-    for corpus_part in corpus_parts
-]
+
+words_in_parts = []; @showprogress 1 "Reading Parts " for corpus_part in corpus_parts
+    content = lowercase(read_corpus_part(joinpath(CONV_DIR, corpus_part)))
+    content = strip_punctuation(content, punctuation, english_dictionary)
+    push!(words_in_parts, content |> find_words)
+end
 
 l = sum(length, words_in_parts)                 # the length of the corpus in words
 s = [length(part)/l for part in words_in_parts] # the percentages of the n corpus part sizes
@@ -49,7 +57,7 @@ v = [countmap(part) for part in words_in_parts] # the frequences of a in each pa
 f = countmap(split(join([join(w, " ") for w in words_in_parts], " "), " "))  # the overall frequencies
 
 norms = Dict{String,Float64}()
-@showprogress 0.5 "Computing DPNorm Scores" for (word, total_freq) in f
+@showprogress 0.5 "Computing DPNorm Scores " for (word, total_freq) in f
     dp = 0
     for i in 1:n
         of = get(v[i], word, 0)

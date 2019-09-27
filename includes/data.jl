@@ -9,6 +9,37 @@ function read_dir(directory::String)
 end
 
 """
+    read_dictionary(fn::String)
+"""
+function read_dictionary(fn::String)
+    open(fn, "r") do f
+        dictionary = split(read(f, String) |> strip |> String, ",")
+        return dictionary
+    end
+end
+
+"""
+    strip_punctuation(s, p
+
+Remove a list of punctuation terms from a string
+"""
+function strip_punctuation(str, p::AbstractArray, dictionary)
+    split_string = split(str, " ")
+    for pᵢ in p
+        for (i, s) in enumerate(split_string)
+            if s ∉ dictionary
+                if occursin("i'm", s)
+                    println(s)
+                end
+                s = replace(s, pᵢ => " ")
+                split_string[i] = s
+            end
+        end
+    end
+    return join(split_string, " ")
+end
+
+"""
     read_corpus_part(fn::String)
 
 Read a corpus part from a text file and return the
