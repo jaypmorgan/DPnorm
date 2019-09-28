@@ -25,19 +25,17 @@ s = ArgParseSettings()
     "--output", "-o"
         help = "filename of the output CSV filename"
     "--punctuation", "-p"
-        help = "strip function from text before computing scores. !!![DEFAULT: .,:;??!。，；：？！‚¿¡…'\"‘’`“”_„()<=>[]{}‹›《》-–—一*]"
+        help = "strip function from text before computing scores. !!![DEFAULT: .,:;??!。，；：？！‚¿¡…'\"‘’`“”_|„()<=>[]{}‹›《》-–—一*]"
 end
 const ARGS = parse_args(s)
 
 # setup the datapaths and count the number of corpus part
 const CONV_DIR = ARGS["input"]
 const OUTPUT_FN = ARGS["output"]
-const punctuation = ARGS["punctuation"] == nothing ? split(".,:;??!。，；：？！‚¿¡…'\"‘’`“”_„()<=>[]{}��‹›《》-–—一*", "") : split(ARGS["punctuation"], "")
+const punctuation = ARGS["punctuation"] == nothing ? split(".,:;??!。，；：？！‚¿¡…'\"‘’`“”_|„()<=>[]{}��‹›《》-–—一*", "") : split(ARGS["punctuation"], "")
 
-# english_dictionary = read_dictionary("includes/english-contractions-list.txt")
-english_dictionary = ["don't", "i'm", "wouldn't", "you'll", "i'd", "she'd", "can't"]
+english_dictionary = read_dictionary("includes/english-contractions-list.txt")
 corpus_parts = read_dir(CONV_DIR)
-
 
 # http://www.stgries.info/research/ToApp_STG_Dispersion_PHCL.pdf
 n = length(corpus_parts)    # the length of the corpus in parts
@@ -48,7 +46,8 @@ s = [];
 words_in_parts = []; @showprogress 1 "Reading Parts " for corpus_part in corpus_parts
     content = lowercase(read_corpus_part(joinpath(CONV_DIR, corpus_part)))
     content = strip_punctuation(content, punctuation, english_dictionary)
-    push!(words_in_parts, content |> find_words)
+    content = content |> find_words
+    push!(words_in_parts, content)
 end
 
 l = sum(length, words_in_parts)                 # the length of the corpus in words

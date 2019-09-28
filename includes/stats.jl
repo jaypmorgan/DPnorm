@@ -1,5 +1,5 @@
 function find_words(conv::String)
-    conv = split(conv, r"[\n\s]")  # split by new line or space
+    conv = split(conv, r"[\n\s]")
     conv = filter(x -> x != "", conv)
 end
 

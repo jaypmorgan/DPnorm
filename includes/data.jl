@@ -28,15 +28,12 @@ function strip_punctuation(str, p::AbstractArray, dictionary)
     for pᵢ in p
         for (i, s) in enumerate(split_string)
             if s ∉ dictionary
-                if occursin("i'm", s)
-                    println(s)
-                end
                 s = replace(s, pᵢ => " ")
                 split_string[i] = s
             end
         end
     end
-    return join(split_string, " ")
+    return replace(join(split_string, " "), "http " => "http://")
 end
 
 """
@@ -54,7 +51,7 @@ function read_corpus_part(fn::String)
         @warn "Skipping $fn as there is no known method of reading it"
         content = ""
     end
-    return content
+    return replace_contents(content)
 end
 
 function read_text_file(fn::String)
@@ -72,5 +69,17 @@ to be read exists in a corpus_part_tag tag within the XML file.
 function read_xml_file(fn::String)
     xdoc = parse_file(fn)
     c = root(xdoc) |> content |> strip |> String
+end
+
+
+function replace_contents(c)
     c = replace(c, "\n" => "")
+    c = replace(c, r" n't" => "n't")
+    c = replace(c, r" 'm" => "'m")
+    c = replace(c, r" 've" => "'ve")
+    c = replace(c, r" 'd" => "'d")
+    c = replace(c, r" 's" => "'s")
+    c = replace(c, r" 't" => "'t")
+    c = replace(c , r" 'l" => "'l")
+    c = replace(c, r"smiley" => "smile")
 end
