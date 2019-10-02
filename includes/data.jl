@@ -28,7 +28,11 @@ function strip_punctuation(str, p::AbstractArray, dictionary)
     for pᵢ in p
         for (i, s) in enumerate(split_string)
             if s ∉ dictionary
-                s = replace(s, pᵢ => " ")
+                if pᵢ == "'"
+                    s = replace(s, pᵢ => "")
+                else
+                    s = replace(s, pᵢ => " ")
+                end
                 split_string[i] = s
             end
         end
@@ -73,13 +77,16 @@ end
 
 
 function replace_contents(c)
-    c = replace(c, "\n" => "")
-    c = replace(c, r" n't" => "n't")
-    c = replace(c, r" 'm" => "'m")
-    c = replace(c, r" 've" => "'ve")
-    c = replace(c, r" 'd" => "'d")
-    c = replace(c, r" 's" => "'s")
-    c = replace(c, r" 't" => "'t")
-    c = replace(c , r" 'l" => "'l")
+    # fix tokenisation from CQPweb if it has occured
+    c = replace(c, "\n" => " ")
+    c = replace(c, r"\sn't" => "n't")
+    c = replace(c, r"\s'm" => "'m")
+    c = replace(c, r"\s've" => "'ve")
+    c = replace(c, r"\s'd" => "'d")
+    c = replace(c, r"\s's" => "'s")
+    c = replace(c, r"s\'t" => "'t")
+    c = replace(c , r"\s'l" => "'l")
     c = replace(c, r"smiley" => "smile")
+    c = replace(c, r"wan na" => "wanna")
+    c = replace(c, r"gon na" => "gonna")
 end
